@@ -1,0 +1,19 @@
+appId: com.subnetting.app
+productName: Subnetting App
+directories:
+  output: dist
+files:
+  - main.js
+  - preload.js
+  - python-bridge.js
+  - src/**/*
+  - ../backend/dist/subnet-cli/**/*
+extraResources:
+  - from: ../backend/dist/subnet-cli
+    to: subnet-cli
+win:
+  target:
+    - nsis
+    - portable
+nsis:
+  oneClicker: false

@@ -1,0 +1,17 @@
+{
+  "name": "subnetting-app",
+  "version": "0.1.0",
+  "description": "FLSM/VLSM subnet calculator (IPv4 + IPv6)",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder"
+  },
+  "devDependencies": {
+    "electron": "^33.0.0",
+    "electron-builder": "^25.0.0"
+  },
+  "dependencies": {
+    "lucide": "^1.47.0"
+  }
+}

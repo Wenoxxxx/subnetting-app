@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Subnetting App</title>
+  <script>
+    // Apply persisted theme before CSS paints (avoids flash). Default: dark.
+    try {
+      var t = localStorage.getItem('subnet-theme');
+      document.documentElement.dataset.theme = t === 'light' ? 'light' : 'dark';
+    } catch (e) {
+      document.documentElement.dataset.theme = 'dark';
+    }
+  </script>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header>
+    <div class="title-row">
+      <h1><i data-lucide="network"></i> Subnetting App</h1>
+      <button id="theme-toggle" class="theme-toggle" aria-label="Switch to light mode">
+        <i data-lucide="sun"></i><span>Light</span>
+      </button>
+    </div>
+    <div class="mode-tabs" role="tablist">
+      <button data-mode="flsm" class="active" role="tab"><i data-lucide="layout-grid"></i>FLSM</button>
+      <button data-mode="vlsm" role="tab"><i data-lucide="split"></i>VLSM</button>
+      <button data-mode="ipv6" role="tab"><i data-lucide="hexagon"></i>IPv6</button>
+      <button data-mode="nth" role="tab"><i data-lucide="hash"></i>Nth IP</button>
+    </div>
+  </header>
+
+  <main>
+    <section id="panel-flsm" class="panel active">
+      <label>Network CIDR
+        <input id="flsm-network" value="192.168.1.0/24" placeholder="192.168.1.0/24" autocomplete="off" spellcheck="false" />
+      </label>
+      <div class="row">
+        <label>New prefix
+          <input id="flsm-prefix" type="number" value="26" min="0" max="32" />
+        </label>
+        <span class="or">or</span>
+        <label>Subnet count
+          <input id="flsm-count" type="number" min="1" placeholder="e.g. 4" />
+        </label>
+      </div>
+      <button id="flsm-go"><i data-lucide="calculator"></i>Calculate</button>
+    </section>
+
+    <section id="panel-vlsm" class="panel">
+      <label>Base network
+        <input id="vlsm-network" value="10.0.0.0/24" placeholder="10.0.0.0/24" autocomplete="off" spellcheck="false" />
+      </label>
+      <label>Requirements (name:hosts per line)
+        <textarea id="vlsm-reqs" rows="4" spellcheck="false">A:50
+B:20
+C:10</textarea>
+      </label>
+      <button id="vlsm-go"><i data-lucide="play"></i>Allocate</button>
+    </section>
+
+    <section id="panel-ipv6" class="panel">
+      <label>IPv6 network
+        <input id="ipv6-network" value="2001:db8::/48" placeholder="2001:db8::/48" autocomplete="off" spellcheck="false" />
+      </label>
+      <label>New prefix
+        <input id="ipv6-prefix" type="number" value="56" min="0" max="128" />
+      </label>
+      <button id="ipv6-go"><i data-lucide="calculator"></i>Calculate</button>
+    </section>
+
+    <section id="panel-nth" class="panel">
+      <label>Subnet CIDR
+        <input id="nth-network" value="192.168.1.0/26" placeholder="192.168.1.0/26" autocomplete="off" spellcheck="false" />
+      </label>
+      <label>Position n
+        <input id="nth-n" type="number" value="100" min="1" />
+      </label>
+      <button id="nth-go"><i data-lucide="search"></i>Find IP</button>
+      <p id="nth-result" class="nth-result" hidden></p>
+    </section>
+
+    <p id="error" role="alert"></p>
+
+    <div class="results-bar">
+      <p id="result-meta" class="result-meta"></p>
+      <button id="clear-results" class="ghost-btn" disabled><i data-lucide="trash-2"></i>Clear</button>
+    </div>
+    <div class="table-wrap">
+      <table id="results">
+        <thead>
+          <tr>
+            <th>Name</th><th>Network</th><th>/Prefix</th><th>Mask</th>
+            <th>First usable</th><th>Last usable</th><th>Broadcast</th><th>Usable count</th><th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr class="empty-row"><td colspan="9"><i data-lucide="inbox"></i>No results yet — run a calculation.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </main>
+
+  <script src="vendor/lucide.min.js"></script>
+  <script src="renderer.js"></script>
+</body>
+</html>
