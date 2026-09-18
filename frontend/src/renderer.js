@@ -7,8 +7,21 @@ const themeToggle = document.getElementById('theme-toggle');
 const clearBtn = document.getElementById('clear-results');
 const resultsTable = document.getElementById('results');
 
+const resultsBar = document.querySelector('.results-bar');
+const tableWrap = document.querySelector('.table-wrap');
+
 const MAX_ROWS = 500;
 const EMPTY_ROW = '<tr class="empty-row"><td colspan="9"><i data-lucide="inbox"></i>No results yet — run a calculation.</td></tr>';
+
+// ---- Per-mode state: each calculator keeps its own table + meta + error ----
+const MODES = ['flsm', 'vlsm', 'ipv6', 'nth'];
+let activeMode = 'flsm';
+const modeResults = {
+  flsm: { rows: [], label: '' },
+  vlsm: { rows: [], label: '' },
+  ipv6: { rows: [], label: '' },
+};
+const modeErrors = { flsm: '', vlsm: '', ipv6: '', nth: '' };
 
 function fmtCount(n) {
   return Number(n).toLocaleString('en-US');
@@ -49,30 +62,55 @@ themeToggle.addEventListener('click', () => {
 
 // ---- Tabs ----
 function clearResults() {
-  resultsTable.classList.remove('ipv6');
-  tbody.innerHTML = EMPTY_ROW;
-  setMeta('');
+  if (activeMode === 'nth') {
+    const resultEl = document.getElementById('nth-result');
+    resultEl.hidden = true;
+    resultEl.innerHTML = '';
+    modeErrors.nth = '';
+    showError('');
+    clearBtn.disabled = true;
+    refreshIcons();
+    return;
+  }
+  modeResults[activeMode] = { rows: [], label: '' };
+  modeErrors[activeMode] = '';
+  paintTable([], '');
   showError('');
-  const resultEl = document.getElementById('nth-result');
-  resultEl.hidden = true;
-  resultEl.innerHTML = '';
   clearBtn.disabled = true;
   refreshIcons();
 }
 
 clearBtn.addEventListener('click', clearResults);
 
+function restoreMode(mode) {
+  if (!MODES.includes(mode)) mode = 'flsm';
+  activeMode = mode;
+  tabs.forEach((b) => b.classList.toggle('active', b.dataset.mode === mode));
+  panels.forEach((p) => p.classList.toggle('active', p.id === `panel-${mode}`));
+  // Nth IP uses its own inline answer, not the shared table.
+  const isNth = mode === 'nth';
+  if (resultsBar) resultsBar.hidden = isNth;
+  if (tableWrap) tableWrap.hidden = isNth;
+  if (!isNth) {
+    const state = modeResults[mode];
+    paintTable(state.rows, state.label);
+    clearBtn.disabled = state.rows.length === 0;
+  } else {
+    clearBtn.disabled = document.getElementById('nth-result').hidden;
+  }
+  const err = modeErrors[mode] || '';
+  errorEl.innerHTML = err ? '<i data-lucide="circle-alert"></i>' : '';
+  errorEl.append(err || '');
+  refreshIcons();
+}
+
 tabs.forEach((btn) => {
-  btn.addEventListener('click', () => {
-    tabs.forEach((b) => b.classList.remove('active'));
-    panels.forEach((p) => p.classList.remove('active'));
-    btn.classList.add('active');
-    document.getElementById(`panel-${btn.dataset.mode}`).classList.add('active');
-  });
+  btn.addEventListener('click', () => restoreMode(btn.dataset.mode));
 });
 
 // ---- Results ----
 function showError(msg) {
+  modeErrors[activeMode] = msg || '';
   errorEl.innerHTML = msg ? '<i data-lucide="circle-alert"></i>' : '';
   errorEl.append(msg || '');
   refreshIcons();
@@ -90,7 +128,13 @@ function setBusy(btn, busy, idleLabel) {
   refreshIcons();
 }
 
-function renderTable(subnets, label) {
+function renderTable(mode, subnets, label) {
+  modeResults[mode] = { rows: subnets || [], label: label || '' };
+  if (mode !== activeMode) return;
+  paintTable(modeResults[mode].rows, modeResults[mode].label);
+}
+
+function paintTable(subnets, label) {
   tbody.innerHTML = '';
   const rows = subnets || [];
   const isV6 = rows.length > 0 && rows.every((s) => !s.subnet_mask && !s.broadcast_address);
@@ -217,7 +261,7 @@ flsmBtn.addEventListener('click', () => runWithButton(flsmBtn, 'Calculate', asyn
     payload = { action: 'flsm', network, new_prefix: Number(prefixRaw) };
   }
   const res = await callBackend(payload);
-  renderTable(res ? res.subnets : [], `FLSM from ${network}`);
+  if (res) renderTable('flsm', res.subnets, `FLSM from ${network}`);
 }));
 
 // ---- VLSM ----
@@ -243,7 +287,7 @@ vlsmBtn.addEventListener('click', () => runWithButton(vlsmBtn, 'Allocate', async
     return;
   }
   const res = await callBackend({ action: 'vlsm', network, requirements });
-  renderTable(res ? res.subnets : [], `VLSM from ${network}`);
+  if (res) renderTable('vlsm', res.subnets, `VLSM from ${network}`);
 }));
 
 // ---- IPv6 ----
@@ -257,7 +301,7 @@ ipv6Btn.addEventListener('click', () => runWithButton(ipv6Btn, 'Calculate', asyn
   }
   const new_prefix = Number(document.getElementById('ipv6-prefix').value);
   const res = await callBackend({ action: 'ipv6', network, new_prefix });
-  renderTable(res ? res.subnets : [], `IPv6 from ${network}`);
+  if (res) renderTable('ipv6', res.subnets, `IPv6 from ${network}`);
 }));
 
 // ---- Nth IP ----
@@ -298,4 +342,5 @@ document.querySelectorAll('.panel').forEach((panel) => {
 
 // ---- Boot ----
 initTheme();
+restoreMode('flsm');
 refreshIcons();
