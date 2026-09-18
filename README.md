@@ -124,6 +124,5 @@ python backend/tests/test_subnet_calc.py -v
 
 17 tests: FLSM splits, VLSM allocation order, exhaustion errors, `/31`/`/32`, nth-IP, IPv6 splits, invalid input.
 
-## Code Standards
-
-See [CODE_STANDARDS.md](context/CODE_STANDARDS.md). Priority: correctness > security > readability > performance.
+## Author
+Wenoxxxx
